@@ -162,7 +162,7 @@ function tiles(s) {
 function chart(s) {
   const host = document.getElementById("chart"), tip = document.getElementById("tip");
   host.querySelectorAll("svg").forEach(n => n.remove());
-  const W = host.clientWidth, H = 280, m = { l: 64, r: W < 560 ? 12 : 104, t: 12, b: 28 };
+  const W = Math.max(host.clientWidth || 0, 320), H = 280, m = { l: 64, r: W < 560 ? 12 : 104, t: 12, b: 28 };
   const x0 = s.window.start, x1 = s.window.end;
   const series = [["crypto", "Crypto", "var(--s1)"], ["stocks", "Stocks", "var(--s2)"]]
     .map(([k, name, col]) => ({ k, name, col, pts: (s.books[k].history || []).filter(p => p[0] >= x0 - 3600e3) }))
