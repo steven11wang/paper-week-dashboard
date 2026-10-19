@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paper Week</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+  --s1: #2a78d6; --s2: #eb6834; --up: #006300; --down: #d03b3b; --wash: rgba(11,11,11,0.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --s1: #3987e5; --s2: #d95926; --up: #0ca30c; --down: #e66767; --wash: rgba(255,255,255,0.05);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+  --s1: #3987e5; --s2: #d95926; --up: #0ca30c; --down: #e66767; --wash: rgba(255,255,255,0.05);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 48px; }
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+.sub { color: var(--ink-2); margin-top: 2px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink-2); font-size: 12px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--up); }
+.dot.stale { background: var(--muted); }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.card h2 { font-size: 14px; margin: 0 0 12px; font-weight: 600; }
+.card h2 small { color: var(--muted); font-weight: 400; margin-left: 6px; }
+.progress { height: 6px; background: var(--wash); border-radius: 3px; overflow: hidden; margin: 8px 0 4px; }
+.progress > i { display: block; height: 100%; background: var(--ink-2); border-radius: 3px; }
+.prog-labels { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+.tile .k { color: var(--ink-2); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+.tile .v { font-size: 24px; font-weight: 650; margin-top: 4px; letter-spacing: -0.01em; }
+.tile.hero .v { font-size: 30px; }
+.tile .d { font-size: 13px; margin-top: 2px; }
+.sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.up { color: var(--up); } .down { color: var(--down); } .flat { color: var(--ink-2); }
+.legend { display: flex; gap: 16px; color: var(--ink-2); font-size: 12px; margin-bottom: 6px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+#chart { position: relative; width: 100%; }
+#chart svg { display: block; width: 100%; height: 280px; overflow: visible; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); white-space: nowrap; display: none; }
+.tip b { display: block; margin-bottom: 2px; }
+.tip .row { display: flex; align-items: center; gap: 6px; }
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th { color: var(--muted); font-weight: 500; font-size: 12px; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+tr:last-child td { border-bottom: none; }
+.tag { font-size: 11px; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); color: var(--ink-2); }
+.range { position: relative; width: 140px; height: 6px; background: var(--wash); border-radius: 3px; }
+.range i { position: absolute; top: -3px; width: 2px; height: 12px; border-radius: 1px; }
+.range .e { background: var(--muted); } .range .m { background: var(--ink); width: 3px; }
+.range-l { display: flex; justify-content: space-between; width: 140px; font-size: 10px; color: var(--muted); }
+.empty { color: var(--muted); padding: 8px 0; }
+.log { list-style: none; margin: 0; padding: 0; max-height: 320px; overflow-y: auto; font-size: 13px; }
+.log li { padding: 6px 0; border-bottom: 1px solid var(--grid); display: grid; grid-template-columns: 130px 64px 1fr; gap: 8px; }
+.log li:last-child { border-bottom: none; }
+.log .t { color: var(--muted); font-variant-numeric: tabular-nums; }
+details summary { cursor: pointer; color: var(--ink-2); font-size: 12px; margin-top: 8px; }
+.note { color: var(--muted); font-size: 12px; margin-top: 16px; }
+@media (max-width: 640px) { .log li { grid-template-columns: 1fr; gap: 0; } .tile.hero .v { font-size: 26px; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Paper Week</h1>
+      <div class="sub">Simulated ledger · no real orders · crypto on Liquid quotes, stocks on Webull quotes</div>
+    </div>
+    <div class="meta">
+      <span class="pill"><span class="dot" id="live-dot"></span><span id="updated">loading…</span></span>
+      <span class="pill" id="next-c">next crypto run —</span>
+      <span class="pill" id="next-s">next stocks run —</span>
+    </div>
+  </header>
+
+  <div class="card" style="padding:12px 16px">
+    <div class="prog-labels"><span>Mon Oct 19, 6:00 AM ET</span><span id="prog-pct"></span><span>Mon Oct 26, 6:00 AM ET</span></div>
+    <div class="progress"><i id="prog"></i></div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="card">
+    <h2>Equity <small>marked live with public prices between runs</small></h2>
+    <div class="legend"><span><i class="sw" style="background:var(--s1)"></i>Crypto book</span><span><i class="sw" style="background:var(--s2)"></i>Stocks book</span><span><i class="sw" style="background:var(--axis);height:2px"></i>$10,000 start</span></div>
+    <div id="chart"><div class="tip" id="tip"></div></div>
+    <details><summary>Show data table</summary><div class="scroll"><table id="hist-table"></table></div></details>
+  </div>
+
+  <div class="card">
+    <h2>Open positions <small id="pos-count"></small></h2>
+    <div class="scroll"><table id="positions"></table></div>
+  </div>
+
+  <div class="card">
+    <h2>Closed trades <small id="closed-sum"></small></h2>
+    <div class="scroll"><table id="closed"></table></div>
+  </div>
+
+  <div class="card">
+    <h2>Activity</h2>
+    <ul class="log" id="log"></ul>
+  </div>
+
+  <div class="note">Ledger updates only on scheduled runs (crypto every 4h, stocks hourly 9:32–3:32 ET weekdays). Between runs this page re-marks open positions from Hyperliquid / Yahoo public prices (online copy: crypto live in your browser, stocks as of the last snapshot, pushed every ~10 min), so live P&amp;L here can differ slightly from the connector quotes the ledger fills at.</div>
+</main>
+<script>
+const ET = "America/New_York";
+const fmtT = (ms, opts) => new Intl.DateTimeFormat("en-US", Object.assign({ timeZone: ET }, opts)).format(new Date(ms));
+const tShort = ms => fmtT(ms, { weekday: "short", hour: "numeric", minute: "2-digit" });
+const usd = (v, d = 2) => v == null ? "—" : (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const sgnUsd = v => v == null ? "—" : (v >= 0 ? "+" : "") + usd(v);
+const pct = v => v == null ? "—" : (v >= 0 ? "+" : "−") + Math.abs(v * 100).toFixed(2) + "%";
+const cls = v => v == null || Math.abs(v) < 1e-9 ? "flat" : v > 0 ? "up" : "down";
+const arrow = v => v == null || Math.abs(v) < 1e-9 ? "" : v > 0 ? "▲ " : "▼ ";
+const px = v => v == null ? "—" : Math.abs(v) >= 100 ? v.toFixed(2) : Math.abs(v) >= 1 ? v.toFixed(4) : v.toPrecision(5);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+let S = null;
+
+function tiles(s) {
+  const c = s.books.crypto, k = s.books.stocks;
+  const start = c.start_equity + k.start_equity;
+  const eq = (c.started ? c.equity : c.start_equity) + (k.started ? k.equity : k.start_equity);
+  const b = (bk, sym) => (s.books[bk].benchmark || []).find(x => x.sym === sym);
+  const btc = b("crypto", "BTC"), spy = b("stocks", "SPY");
+  const t = (label, v, d, extra, hero, sw) => `<div class="tile${hero ? " hero" : ""}"><div class="k">${sw ? `<i class="sw" style="background:${sw}"></i>` : ""}${label}</div><div class="v">${v}</div><div class="d ${cls(d)}">${extra}</div></div>`;
+  const book = (bk, label, sw) => {
+    const x = s.books[bk];
+    if (!x.started) return t(label, usd(x.start_equity), null, "not started yet", false, sw);
+    const d = x.equity / x.start_equity - 1;
+    return t(label, usd(x.equity), d, `${arrow(d)}${pct(d)} · ${sgnUsd(x.equity - x.start_equity)}`, false, sw);
+  };
+  const dd = eq / start - 1;
+  document.getElementById("tiles").innerHTML =
+    t("Combined (both books)", usd(eq), dd, `${arrow(dd)}${pct(dd)} · ${sgnUsd(eq - start)} on ${usd(start, 0)}`, true) +
+    book("crypto", "Crypto book · Liquid", "var(--s1)") + book("stocks", "Stocks book · Webull", "var(--s2)") +
+    t("BTC buy &amp; hold", btc && btc.pct != null ? pct(btc.pct) : "—", btc && btc.pct, btc ? `since start · ${px(btc.start)} → ${px(btc.now)}` : "starts with the crypto book") +
+    t("SPY buy &amp; hold", spy && spy.pct != null ? pct(spy.pct) : "—", spy && spy.pct, spy ? `since start · ${px(spy.start)} → ${px(spy.now)}` : "starts with the stocks book");
+}
+
+function chart(s) {
+  const host = document.getElementById("chart"), tip = document.getElementById("tip");
+  host.querySelectorAll("svg").forEach(n => n.remove());
+  const W = host.clientWidth, H = 280, m = { l: 64, r: W < 560 ? 12 : 104, t: 12, b: 28 };
+  const x0 = s.window.start, x1 = s.window.end;
+  const series = [["crypto", "Crypto", "var(--s1)"], ["stocks", "Stocks", "var(--s2)"]]
+    .map(([k, name, col]) => ({ k, name, col, pts: (s.books[k].history || []).filter(p => p[0] >= x0 - 3600e3) }))
+    .filter(x => x.pts.length);
+  const vals = series.flatMap(x => x.pts.map(p => p[1])).concat([10000]);
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  const pad = Math.max((hi - lo) * 0.15, 150); lo -= pad; hi += pad;
+  const step = [50, 100, 200, 250, 500, 1000, 2000, 2500, 5000].find(v => (hi - lo) / v <= 6) || 10000;
+  lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+  const X = t => m.l + (Math.min(Math.max(t, x0), x1) - x0) / (x1 - x0) * (W - m.l - m.r);
+  const Y = v => m.t + (hi - v) / (hi - lo) * (H - m.t - m.b);
+  let g = "";
+  for (let v = lo; v <= hi + 1e-6; v += step)
+    g += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--grid)" stroke-width="1"/>` +
+         `<text x="${m.l - 8}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)" style="font-variant-numeric:tabular-nums">${usd(v, 0)}</text>`;
+  for (let d = 0; d <= 7; d++) {
+    const t = x0 + d * 86400e3, xx = X(t);
+    g += `<line x1="${xx}" x2="${xx}" y1="${H - m.b}" y2="${H - m.b + 4}" stroke="var(--axis)"/>` +
+         `<text x="${xx}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--muted)">${fmtT(t, { weekday: "short" })}</text>`;
+  }
+  g += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(10000)}" y2="${Y(10000)}" stroke="var(--axis)" stroke-width="1.5" stroke-dasharray="4 4"/>`;
+  const now = s.now;
+  if (now < x1) g += `<line x1="${X(now)}" x2="${X(now)}" y1="${m.t}" y2="${H - m.b}" stroke="var(--grid)" stroke-dasharray="2 3"/>`;
+  const labels = [];
+  for (const se of series) {
+    const d = se.pts.map((p, i) => `${i ? "L" : "M"}${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join("");
+    g += `<path d="${d}" fill="none" stroke="${se.col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const last = se.pts[se.pts.length - 1];
+    g += `<circle cx="${X(last[0])}" cy="${Y(last[1])}" r="4" fill="${se.col}" stroke="var(--surface)" stroke-width="2"/>`;
+    labels.push({ y: Y(last[1]), x: X(last[0]), text: `${se.name} ${usd(last[1], 0)}` });
+  }
+  if (m.r > 20) {
+    labels.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < labels.length; i++) if (labels[i].y - labels[i - 1].y < 15) labels[i].y = labels[i - 1].y + 15;
+    for (const l of labels) g += `<text x="${Math.min(l.x + 10, W - m.r + 8)}" y="${l.y + 4}" font-size="12" fill="var(--ink-2)">${l.text}</text>`;
+  }
+  g += `<g id="hover" style="display:none"><line id="hx" y1="${m.t}" y2="${H - m.b}" stroke="var(--axis)"/>${series.map((se, i) => `<circle id="hc${i}" r="4" fill="${se.col}" stroke="var(--surface)" stroke-width="2"/>`).join("")}</g>`;
+  g += `<rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="transparent" id="hit"/>`;
+  host.insertAdjacentHTML("afterbegin", `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Equity of crypto and stocks books over the week">${g}</svg>`);
+  const svg = host.querySelector("svg"), hov = svg.querySelector("#hover");
+  const at = (pts, t) => { let r = null; for (const p of pts) { if (p[0] <= t) r = p; else break; } return r; };
+  svg.querySelector("#hit").addEventListener("pointermove", ev => {
+    const r = svg.getBoundingClientRect(), xx = ev.clientX - r.left;
+    const t = x0 + (xx - m.l) / (W - m.l - m.r) * (x1 - x0);
+    const tt = Math.min(t, now);
+    hov.style.display = ""; const hx = svg.querySelector("#hx"); hx.setAttribute("x1", X(tt)); hx.setAttribute("x2", X(tt));
+    let rows = "";
+    series.forEach((se, i) => {
+      const p = at(se.pts, tt), c = svg.querySelector("#hc" + i);
+      if (!p) { c.style.display = "none"; return; }
+      c.style.display = ""; c.setAttribute("cx", X(tt)); c.setAttribute("cy", Y(p[1]));
+      rows += `<div class="row"><i class="sw" style="background:${se.col}"></i>${se.name} ${usd(p[1])} <span class="${cls(p[1] - 10000)}">${pct(p[1] / 10000 - 1)}</span></div>`;
+    });
+    tip.innerHTML = `<b>${tShort(tt)} ET</b>${rows || "no data yet"}`;
+    tip.style.display = "block";
+    const tw = tip.offsetWidth;
+    tip.style.left = Math.max(0, Math.min(X(tt) + 12, W - tw)) + "px"; tip.style.top = (m.t + 4) + "px";
+  });
+  svg.querySelector("#hit").addEventListener("pointerleave", () => { hov.style.display = "none"; tip.style.display = "none"; });
+  const rows = series.flatMap(se => se.pts.map(p => [p[0], se.name, p[1]])).sort((a, b) => b[0] - a[0]);
+  document.getElementById("hist-table").innerHTML = `<tr><th>Time (ET)</th><th>Book</th><th class="n">Equity</th></tr>` +
+    rows.map(r => `<tr><td>${tShort(r[0])}</td><td>${r[1]}</td><td class="n">${usd(r[2])}</td></tr>`).join("");
+}
+
+function positions(s) {
+  const rows = [];
+  for (const bk of ["crypto", "stocks"]) for (const p of (s.books[bk].positions || [])) rows.push(Object.assign({ bk }, p));
+  document.getElementById("pos-count").textContent = rows.length ? `${rows.length} open` : "";
+  if (!rows.length) { document.getElementById("positions").innerHTML = `<tr><td class="empty">No open positions. Entries happen only on fresh signals at scheduled runs.</td></tr>`; return; }
+  const bar = p => {
+    if (p.mark == null) return "";
+    const f = v => Math.max(0, Math.min(1, (v - p.sl) / (p.tp - p.sl))) * 100;
+    return `<div class="range" title="stop ${px(p.sl)} → target ${px(p.tp)}"><i class="e" style="left:${f(p.entry)}%"></i><i class="m" style="left:calc(${f(p.mark)}% - 1px)"></i></div><div class="range-l"><span>stop</span><span>target</span></div>`;
+  };
+  document.getElementById("positions").innerHTML =
+    `<tr><th>Symbol</th><th>Book</th><th>Side</th><th class="n">Entry</th><th class="n">Mark</th><th class="n">P&amp;L</th><th class="n">Notional</th><th>Stop → target</th><th>Opened</th></tr>` +
+    rows.map(p => `<tr><td><b>${esc(p.sym)}</b></td><td><span class="sw" style="background:var(--${p.bk === "crypto" ? "s1" : "s2"})"></span> ${p.bk}</td>` +
+      `<td><span class="tag">${p.side}${p.lev ? " " + p.lev + "×" : ""}</span></td><td class="n">${px(p.entry)}</td><td class="n">${px(p.mark)}</td>` +
+      `<td class="n ${cls(p.upnl)}">${sgnUsd(p.upnl)}<br><small>${pct(p.upnl_pct)}</small></td><td class="n">${usd(p.notional, 0)}</td>` +
+      `<td>${bar(p)}</td><td>${tShort(p.t_entry)}</td></tr>`).join("");
+}
+
+function closed(s) {
+  const rows = [];
+  for (const bk of ["crypto", "stocks"]) for (const x of (s.books[bk].closed || [])) rows.push(Object.assign({ bk }, x));
+  rows.sort((a, b) => b.exit_t - a.exit_t);
+  const tot = rows.reduce((a, x) => a + x.pnl, 0), wins = rows.filter(x => x.pnl > 0).length;
+  document.getElementById("closed-sum").innerHTML = rows.length ? `${rows.length} trades · ${wins} wins · <span class="${cls(tot)}">${sgnUsd(tot)}</span>` : "";
+  if (!rows.length) { document.getElementById("closed").innerHTML = `<tr><td class="empty">No closed trades yet.</td></tr>`; return; }
+  document.getElementById("closed").innerHTML =
+    `<tr><th>Closed (ET)</th><th>Symbol</th><th>Book</th><th>Side</th><th class="n">Entry</th><th class="n">Exit</th><th class="n">P&amp;L</th><th class="n">R</th><th>Reason</th></tr>` +
+    rows.map(x => `<tr><td>${tShort(x.exit_t)}</td><td><b>${esc(x.sym)}</b></td><td>${x.bk}</td><td>${x.side}</td><td class="n">${px(x.entry)}</td><td class="n">${px(x.exit)}</td>` +
+      `<td class="n ${cls(x.pnl)}">${sgnUsd(x.pnl)}</td><td class="n">${x.r == null ? "" : (x.r >= 0 ? "+" : "") + x.r.toFixed(2)}</td><td>${esc(x.reason)}</td></tr>`).join("");
+}
+
+function log(s) {
+  const ev = [];
+  for (const bk of ["crypto", "stocks"]) for (const e of (s.books[bk].events || [])) ev.push([e[0], bk, e[1]]);
+  ev.sort((a, b) => b[0] - a[0]);
+  document.getElementById("log").innerHTML = ev.length ? ev.slice(0, 80).map(e => `<li><span class="t">${tShort(e[0])}</span><span>${e[1]}</span><span>${esc(e[2])}</span></li>`).join("")
+    : `<li class="empty">Nothing yet.</li>`;
+}
+
+function header(s) {
+  const f = Math.max(0, Math.min(1, (s.now - s.window.start) / (s.window.end - s.window.start)));
+  document.getElementById("prog").style.width = (f * 100).toFixed(1) + "%";
+  document.getElementById("prog-pct").textContent = `${(f * 100).toFixed(0)}% of the week elapsed`;
+  const nr = s.next_runs, lbl = iso => iso ? tShort(Date.parse(iso)) + " ET" : "none left";
+  document.getElementById("next-c").textContent = "next crypto run " + lbl(nr.crypto);
+  document.getElementById("next-s").textContent = "next stocks run " + lbl(nr.stocks);
+  document.getElementById("updated").textContent = "live · " + fmtT(s.now, { hour: "numeric", minute: "2-digit", second: "2-digit" }) + " ET";
+  document.getElementById("live-dot").classList.remove("stale");
+}
+
+const LOCAL = location.port === "8787";
+async function remarkCrypto(s) {
+  // static (GitHub Pages) mode: re-price open crypto positions from Hyperliquid in the browser
+  const b = s.books.crypto;
+  if (!b.started || b.final) return;
+  try {
+    const mids = await (await fetch("https://api.hyperliquid.xyz/info", { method: "POST",
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "allMids" }) })).json();
+    let u = 0;
+    for (const p of b.positions) {
+      const m = parseFloat(mids[p.sym]); if (!m) { u += p.upnl || 0; continue; }
+      const sd = p.side === "LONG" ? 1 : -1;
+      p.mark = m; p.upnl = sd * p.qty * (m - p.entry); p.upnl_pct = p.upnl / p.notional; u += p.upnl;
+    }
+    for (const x of b.benchmark) { const m = parseFloat(mids[x.sym]); if (m) { x.now = m; x.pct = m / x.start - 1; } }
+    b.upnl = u; b.equity = b.cash + u; s.now = Date.now();
+    if (b.history.length) b.history[b.history.length - 1] = [s.now, b.equity];
+  } catch (e) {}
+}
+async function refresh() {
+  try {
+    const r = await fetch(LOCAL ? "/api/state" : "data.json?t=" + Date.now(), { cache: "no-store" });
+    S = await r.json();
+    if (!LOCAL) await remarkCrypto(S);
+    header(S); tiles(S); chart(S); positions(S); closed(S); log(S);
+  } catch (e) {
+    document.getElementById("updated").textContent = "offline — retrying";
+    document.getElementById("live-dot").classList.add("stale");
+  }
+}
+refresh();
+setInterval(refresh, LOCAL ? 15000 : 30000);
+let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => S && chart(S), 120); });
+</script>
+</body>
+</html>
