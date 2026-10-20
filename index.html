@@ -9,21 +9,21 @@
   color-scheme: light;
   --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
   --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
-  --s1: #2a78d6; --s2: #eb6834; --up: #006300; --down: #d03b3b; --wash: rgba(11,11,11,0.04);
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --up: #006300; --down: #d03b3b; --wash: rgba(11,11,11,0.04);
 }
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme="light"])) {
     color-scheme: dark;
     --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
     --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
-    --s1: #3987e5; --s2: #d95926; --up: #0ca30c; --down: #e66767; --wash: rgba(255,255,255,0.05);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --up: #0ca30c; --down: #e66767; --wash: rgba(255,255,255,0.05);
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
   --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
   --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
-  --s1: #3987e5; --s2: #d95926; --up: #0ca30c; --down: #e66767; --wash: rgba(255,255,255,0.05);
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --up: #0ca30c; --down: #e66767; --wash: rgba(255,255,255,0.05);
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--page); color: var(--ink);
@@ -103,7 +103,7 @@ details summary { cursor: pointer; color: var(--ink-2); font-size: 12px; margin-
 
   <div class="card">
     <h2>Equity <small>marked live with public prices between runs</small></h2>
-    <div class="legend"><span><i class="sw" style="background:var(--s1)"></i>Crypto book</span><span><i class="sw" style="background:var(--s2)"></i>Stocks book</span><span><i class="sw" style="background:var(--axis);height:2px"></i>$10,000 start</span></div>
+    <div class="legend"><span><i class="sw" style="background:var(--s1)"></i>Crypto book</span><span><i class="sw" style="background:var(--s2)"></i>Stocks book</span><span><i class="sw" style="background:var(--s3)"></i>Swing book</span><span><i class="sw" style="background:var(--axis);height:2px"></i>$10,000 start</span></div>
     <div id="chart"><div class="tip" id="tip"></div></div>
     <details><summary>Show data table</summary><div class="scroll"><table id="hist-table"></table></div></details>
   </div>
@@ -123,7 +123,7 @@ details summary { cursor: pointer; color: var(--ink-2); font-size: 12px; margin-
     <ul class="log" id="log"></ul>
   </div>
 
-  <div class="note">Ledger updates only on scheduled runs (crypto every 4h, stocks hourly 9:32–3:32 ET weekdays). Between runs this page re-marks open positions from Hyperliquid / Yahoo public prices (online copy: crypto live in your browser, stocks as of the last snapshot, pushed every ~10 min), so live P&amp;L here can differ slightly from the connector quotes the ledger fills at.</div>
+  <div class="note">Ledger updates only on scheduled runs (crypto every 4h, stocks trend hourly 9:32–3:32 ET weekdays, stocks swing once a day ~3:45 PM ET). Between runs this page re-marks open positions from Hyperliquid / Yahoo public prices (online copy: crypto live in your browser, stocks as of the last snapshot, pushed every ~10 min), so live P&amp;L here can differ slightly from the connector quotes the ledger fills at.</div>
 </main>
 <script>
 const ET = "America/New_York";
@@ -139,9 +139,9 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 let S = null;
 
 function tiles(s) {
-  const c = s.books.crypto, k = s.books.stocks;
-  const start = c.start_equity + k.start_equity;
-  const eq = (c.started ? c.equity : c.start_equity) + (k.started ? k.equity : k.start_equity);
+  const bks = Object.values(s.books);
+  const start = bks.reduce((a, x) => a + x.start_equity, 0);
+  const eq = bks.reduce((a, x) => a + (x.started ? x.equity : x.start_equity), 0);
   const b = (bk, sym) => (s.books[bk].benchmark || []).find(x => x.sym === sym);
   const btc = b("crypto", "BTC"), spy = b("stocks", "SPY");
   const t = (label, v, d, extra, hero, sw) => `<div class="tile${hero ? " hero" : ""}"><div class="k">${sw ? `<i class="sw" style="background:${sw}"></i>` : ""}${label}</div><div class="v">${v}</div><div class="d ${cls(d)}">${extra}</div></div>`;
@@ -154,7 +154,7 @@ function tiles(s) {
   const dd = eq / start - 1;
   document.getElementById("tiles").innerHTML =
     t("Combined (both books)", usd(eq), dd, `${arrow(dd)}${pct(dd)} · ${sgnUsd(eq - start)} on ${usd(start, 0)}`, true) +
-    book("crypto", "Crypto book · Liquid", "var(--s1)") + book("stocks", "Stocks book · Webull", "var(--s2)") +
+    book("crypto", "Crypto book · Liquid", "var(--s1)") + book("stocks", "Stocks trend · Webull", "var(--s2)") + (s.books.swing ? book("swing", "Stocks swing (IBS) · Webull", "var(--s3)") : "") +
     t("BTC buy &amp; hold", btc && btc.pct != null ? pct(btc.pct) : "—", btc && btc.pct, btc ? `since start · ${px(btc.start)} → ${px(btc.now)}` : "starts with the crypto book") +
     t("SPY buy &amp; hold", spy && spy.pct != null ? pct(spy.pct) : "—", spy && spy.pct, spy ? `since start · ${px(spy.start)} → ${px(spy.now)}` : "starts with the stocks book");
 }
@@ -164,7 +164,7 @@ function chart(s) {
   host.querySelectorAll("svg").forEach(n => n.remove());
   const W = Math.max(host.clientWidth || 0, 320), H = 280, m = { l: 64, r: W < 560 ? 12 : 104, t: 12, b: 28 };
   const x0 = s.window.start, x1 = s.window.end;
-  const series = [["crypto", "Crypto", "var(--s1)"], ["stocks", "Stocks", "var(--s2)"]]
+  const series = [["crypto", "Crypto", "var(--s1)"], ["stocks", "Stocks", "var(--s2)"], ["swing", "Swing", "var(--s3)"]].filter(x => s.books[x[0]])
     .map(([k, name, col]) => ({ k, name, col, pts: (s.books[k].history || []).filter(p => p[0] >= x0 - 3600e3) }))
     .filter(x => x.pts.length);
   const vals = series.flatMap(x => x.pts.map(p => p[1])).concat([10000]);
@@ -229,7 +229,7 @@ function chart(s) {
 
 function positions(s) {
   const rows = [];
-  for (const bk of ["crypto", "stocks"]) for (const p of (s.books[bk].positions || [])) rows.push(Object.assign({ bk }, p));
+  for (const bk of Object.keys(s.books)) for (const p of (s.books[bk].positions || [])) rows.push(Object.assign({ bk }, p));
   document.getElementById("pos-count").textContent = rows.length ? `${rows.length} open` : "";
   if (!rows.length) { document.getElementById("positions").innerHTML = `<tr><td class="empty">No open positions. Entries happen only on fresh signals at scheduled runs.</td></tr>`; return; }
   const bar = p => {
@@ -239,7 +239,7 @@ function positions(s) {
   };
   document.getElementById("positions").innerHTML =
     `<tr><th>Symbol</th><th>Book</th><th>Side</th><th class="n">Entry</th><th class="n">Mark</th><th class="n">P&amp;L</th><th class="n">Notional</th><th>Stop → target</th><th>Opened</th></tr>` +
-    rows.map(p => `<tr><td><b>${esc(p.sym)}</b></td><td><span class="sw" style="background:var(--${p.bk === "crypto" ? "s1" : "s2"})"></span> ${p.bk}</td>` +
+    rows.map(p => `<tr><td><b>${esc(p.sym)}</b></td><td><span class="sw" style="background:var(--${({crypto: "s1", stocks: "s2", swing: "s3"})[p.bk]})"></span> ${p.bk}</td>` +
       `<td><span class="tag">${p.side}${p.lev ? " " + p.lev + "×" : ""}</span></td><td class="n">${px(p.entry)}</td><td class="n">${px(p.mark)}</td>` +
       `<td class="n ${cls(p.upnl)}">${sgnUsd(p.upnl)}<br><small>${pct(p.upnl_pct)}</small></td><td class="n">${usd(p.notional, 0)}</td>` +
       `<td>${bar(p)}</td><td>${tShort(p.t_entry)}</td></tr>`).join("");
@@ -247,7 +247,7 @@ function positions(s) {
 
 function closed(s) {
   const rows = [];
-  for (const bk of ["crypto", "stocks"]) for (const x of (s.books[bk].closed || [])) rows.push(Object.assign({ bk }, x));
+  for (const bk of Object.keys(s.books)) for (const x of (s.books[bk].closed || [])) rows.push(Object.assign({ bk }, x));
   rows.sort((a, b) => b.exit_t - a.exit_t);
   const tot = rows.reduce((a, x) => a + x.pnl, 0), wins = rows.filter(x => x.pnl > 0).length;
   document.getElementById("closed-sum").innerHTML = rows.length ? `${rows.length} trades · ${wins} wins · <span class="${cls(tot)}">${sgnUsd(tot)}</span>` : "";
@@ -260,7 +260,7 @@ function closed(s) {
 
 function log(s) {
   const ev = [];
-  for (const bk of ["crypto", "stocks"]) for (const e of (s.books[bk].events || [])) ev.push([e[0], bk, e[1]]);
+  for (const bk of Object.keys(s.books)) for (const e of (s.books[bk].events || [])) ev.push([e[0], bk, e[1]]);
   ev.sort((a, b) => b[0] - a[0]);
   document.getElementById("log").innerHTML = ev.length ? ev.slice(0, 80).map(e => `<li><span class="t">${tShort(e[0])}</span><span>${e[1]}</span><span>${esc(e[2])}</span></li>`).join("")
     : `<li class="empty">Nothing yet.</li>`;
