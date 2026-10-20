@@ -153,7 +153,7 @@ function tiles(s) {
   };
   const dd = eq / start - 1;
   document.getElementById("tiles").innerHTML =
-    t("Combined (both books)", usd(eq), dd, `${arrow(dd)}${pct(dd)} · ${sgnUsd(eq - start)} on ${usd(start, 0)}`, true) +
+    t("Combined (all books)", usd(eq), dd, `${arrow(dd)}${pct(dd)} · ${sgnUsd(eq - start)} on ${usd(start, 0)}`, true) +
     book("crypto", "Crypto book · Liquid", "var(--s1)") + book("stocks", "Stocks trend · Webull", "var(--s2)") + (s.books.swing ? book("swing", "Stocks swing (IBS) · Webull", "var(--s3)") : "") +
     t("BTC buy &amp; hold", btc && btc.pct != null ? pct(btc.pct) : "—", btc && btc.pct, btc ? `since start · ${px(btc.start)} → ${px(btc.now)}` : "starts with the crypto book") +
     t("SPY buy &amp; hold", spy && spy.pct != null ? pct(spy.pct) : "—", spy && spy.pct, spy ? `since start · ${px(spy.start)} → ${px(spy.now)}` : "starts with the stocks book");
