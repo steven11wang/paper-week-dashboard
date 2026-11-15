@@ -123,6 +123,7 @@ details summary { cursor: pointer; color: var(--ink-2); font-size: 12px; margin-
     <ul class="log" id="log"></ul>
   </div>
 
+  <div class="note">A book only trades if its rules made money on data they were never tuned on (walk-forward test, engine/walkforward.py). On 2026-11-14 the crypto trend book and the hourly stock trend book failed that test and were paused; the IBS swing book passed. Their past results stay on this page.</div>
   <div class="note">Ledger updates only on scheduled runs (crypto every 4h, stocks trend hourly 9:32–3:32 ET weekdays, stocks swing once a day ~3:45 PM ET). Between runs this page re-marks open positions from Hyperliquid / Yahoo public prices (online copy: crypto live in your browser, stocks as of the last snapshot, pushed every ~10 min), so live P&amp;L here can differ slightly from the connector quotes the ledger fills at.</div>
 </main>
 <script>
@@ -149,7 +150,10 @@ function tiles(s) {
     const x = s.books[bk];
     if (!x.started) return t(label, usd(x.start_equity), null, "not started yet", false, sw);
     const d = x.equity / x.start_equity - 1;
-    return t(label, usd(x.equity), d, `${arrow(d)}${pct(d)} · ${sgnUsd(x.equity - x.start_equity)}`, false, sw);
+    const n = (x.closed || []).length;
+    const verdict = x.paused ? ` · <span class="tag" title="${esc(x.paused_reason || "")}">paused: failed out-of-sample test</span>`
+      : n < 30 ? ` · <span class="tag">${n}/30 trades, too early to judge</span>` : "";
+    return t(label, usd(x.equity), d, `${arrow(d)}${pct(d)} · ${sgnUsd(x.equity - x.start_equity)}${verdict}`, false, sw);
   };
   const dd = eq / start - 1;
   document.getElementById("tiles").innerHTML =
